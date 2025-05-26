@@ -119,15 +119,7 @@ class UsersController extends AUserDataOCSController {
 		if ($isAdmin || $isDelegatedAdmin) {
 			$users = $this->userManager->search($search, $limit, $offset);
 		} elseif ($subAdminManager->isSubAdmin($user)) {
-			$subAdminOfGroups = $subAdminManager->getSubAdminsGroups($user);
-			foreach ($subAdminOfGroups as $key => $group) {
-				$subAdminOfGroups[$key] = $group->getGID();
-			}
-
-			$users = [];
-			foreach ($subAdminOfGroups as $group) {
-				$users = array_merge($users, $this->groupManager->displayNamesInGroup($group, $search, $limit, $offset));
-			}
+				$users = $this->userManager->search($search, $limit, $offset);
 		}
 
 		/** @var list<string> $users */
@@ -160,26 +152,17 @@ class UsersController extends AUserDataOCSController {
 		$isDelegatedAdmin = $this->groupManager->isDelegatedAdmin($uid);
 		if ($isAdmin || $isDelegatedAdmin) {
 			$users = $this->userManager->search($search, $limit, $offset);
-			$users = array_keys($users);
-		} elseif ($subAdminManager->isSubAdmin($currentUser)) {
-			$subAdminOfGroups = $subAdminManager->getSubAdminsGroups($currentUser);
-			foreach ($subAdminOfGroups as $key => $group) {
-				$subAdminOfGroups[$key] = $group->getGID();
+			if ($isAdmin || $isDelegatedAdmin) {
+				$users = $this->userManager->search($search, $limit, $offset);
+			} elseif ($subAdminManager->isSubAdmin($currentUser)) {
+					$users = $this->userManager->search($search, $limit, $offset);
 			}
-
-			$users = [];
-			foreach ($subAdminOfGroups as $group) {
-				$users[] = array_keys($this->groupManager->displayNamesInGroup($group, $search, $limit, $offset));
-			}
-			$users = array_merge(...$users);
-		}
-
-		$usersDetails = [];
-		foreach ($users as $userId) {
-			$userId = (string)$userId;
-			try {
-				$userData = $this->getUserData($userId);
-			} catch (OCSNotFoundException $e) {
+			$usersDetails = [];
+			foreach ($users as $userId => $userObj) {
+					$userId = (string)$userId;
+					try {
+							$userData = $this->getUserData($userId);
+					} catch (OCSNotFoundException $e) {
 				// We still want to return all other accounts, but this one was removed from the backends
 				// yet they are still in our database. Might be a LDAP remnant.
 				$userData = null;
@@ -188,10 +171,12 @@ class UsersController extends AUserDataOCSController {
 			// Do not insert empty entry
 			if ($userData !== null) {
 				$usersDetails[$userId] = $userData;
-			} else {
-				// Logged user does not have permissions to see this user
-				// only showing its id
-				$usersDetails[$userId] = ['id' => $userId];
+					} else {
+							// Logged user does not have permissions to see this user
+							// show id and displayname
+							$displayName = ($userObj instanceof IUser) ? $userObj->getDisplayName() : $userId;
+							$usersDetails[$userId] = ['id' => $userId, 'displayname' => $displayName];
+					}
 			}
 		}
 

@@ -399,9 +399,10 @@ const actions = {
 				cancelToken: searchRequestCancelSource.token,
 			})
 				.then((response) => {
-					const usersCount = Object.keys(response.data.ocs.data.users).length
+					const userObj = response?.data?.ocs?.data?.users || {}
+					const usersCount = Object.keys(userObj).length
 					if (usersCount > 0) {
-						context.commit('appendUsers', response.data.ocs.data.users)
+							context.commit('appendUsers', userObj)
 					}
 					return usersCount
 				})
@@ -416,9 +417,10 @@ const actions = {
 			cancelToken: searchRequestCancelSource.token,
 		})
 			.then((response) => {
-				const usersCount = Object.keys(response.data.ocs.data.users).length
+				const userObj = response?.data?.ocs?.data?.users || {}
+				const usersCount = Object.keys(userObj).length
 				if (usersCount > 0) {
-					context.commit('appendUsers', response.data.ocs.data.users)
+						context.commit('appendUsers', userObj)
 				}
 				return usersCount
 			})
@@ -443,9 +445,10 @@ const actions = {
 		const url = generateOcsUrl('cloud/users/recent?offset={offset}&limit={limit}&search={search}', { offset, limit, search })
 		try {
 			const response = await api.get(url)
-			const usersCount = Object.keys(response.data.ocs.data.users).length
+			const userObj = response?.data?.ocs?.data?.users || {}
+			const usersCount = Object.keys(userObj).length
 			if (usersCount > 0) {
-				context.commit('appendUsers', response.data.ocs.data.users)
+					context.commit('appendUsers', userObj)
 			}
 			return usersCount
 		} catch (error) {
@@ -467,10 +470,11 @@ const actions = {
 		const url = generateOcsUrl('cloud/users/disabled?offset={offset}&limit={limit}&search={search}', { offset, limit, search })
 		try {
 			const response = await api.get(url)
-			const usersCount = Object.keys(response.data.ocs.data.users).length
+			const userObj = response?.data?.ocs?.data?.users || {}
+			const usersCount = Object.keys(userObj).length
 			if (usersCount > 0) {
-				context.commit('appendUsers', response.data.ocs.data.users)
-				context.commit('updateDisabledUsers', response.data.ocs.data.users)
+					context.commit('appendUsers', userObj)
+					context.commit('updateDisabledUsers', userObj)
 			}
 			return usersCount
 		} catch (error) {
@@ -507,12 +511,13 @@ const actions = {
 	getUsersFromList(context, { offset, limit, search }) {
 		search = typeof search === 'string' ? search : ''
 		return api.get(generateOcsUrl('cloud/users/details?offset={offset}&limit={limit}&search={search}', { offset, limit, search }))
-			.then((response) => {
-				if (Object.keys(response.data.ocs.data.users).length > 0) {
-					context.commit('appendUsers', response.data.ocs.data.users)
-					return true
-				}
-				return false
+					.then((response) => {
+						const userObj = response?.data?.ocs?.data?.users || {}
+						if (Object.keys(userObj).length > 0) {
+								context.commit('appendUsers', userObj)
+								return true
+						}
+						return false
 			})
 			.catch((error) => context.commit('API_FAILURE', error))
 	},
