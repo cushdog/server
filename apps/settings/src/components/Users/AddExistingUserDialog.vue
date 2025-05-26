@@ -5,22 +5,23 @@
 <template>
 	<NcDialog class="dialog"
 		size="small"
-		:name="t(&quot;settings&quot;, &quot;Add existing account&quot;)"
-		out-transition>
+		:name="t('settings', 'Add existing account')"
+		out-transition
+		v-on="$listeners">
 		<form id="add-existing-user-form"
 			class="dialog__form"
 			@submit.prevent="submit">
 			<NcSelect v-model="selectedUser"
 				class="dialog__select"
 				:options="possibleUsers"
-				:placeholder="t(&quot;settings&quot;, &quot;Search accounts&quot;)"
+				:placeholder="t('settings', 'Search accounts')"
 				user-select
 				label="displayname"
 				@search="searchUsers" />
 			<NcSelect v-model="selectedGroup"
 				class="dialog__select"
 				:options="availableGroups"
-				:placeholder="t(&quot;settings&quot;, &quot;Select group&quot;)"
+				:placeholder="t('settings', 'Select group')"
 				label="name"
 				:disabled="preselectedGroup"
 				:clearable="false" />
@@ -83,34 +84,40 @@ export default defineComponent({
 				// @ts-expect-error: allow untyped $store
 				this.promise = this.$store.dispatch('searchUsers', { offset: 0, limit: 10, search: query })
 				const resp = await this.promise
+				logger.debug('AddExistingUserDialog searchUsers response', { resp })
 				const users = resp?.data ? Object.values(resp.data.ocs.data.users) as Record<string, unknown>[] : []
+				logger.debug('AddExistingUserDialog parsed users', { users })
 				this.possibleUsers = users
 			} catch (error) {
 				logger.error(t('settings', 'Failed to search accounts'), { error })
 			}
 			this.promise = null
 		},
+
 		async submit() {
-			if (!this.selectedUser || !this.selectedGroup) {
-				return
-			}
-			try {
-				// @ts-expect-error: allow untyped $store
-				await this.$store.dispatch('addUserGroup', { userid: this.selectedUser.id, gid: this.selectedGroup.id })
-				// @ts-expect-error: allow untyped $store
-				if (!this.$store.getters.getUsers.find(u => u.id === this.selectedUser.id)) {
-					// @ts-expect-error: allow untyped $store
-					const resp = await this.$store.dispatch('getUser', this.selectedUser.id)
-					if (resp) {
-						// @ts-expect-error: allow untyped $store
-						this.$store.commit('addUserData', resp)
-					}
-				}
-				this.$emit('closing')
-			} catch (error) {
-				logger.error(t('settings', 'Failed to add user to group'), { error })
-			}
-		},
+                       if (!this.selectedUser || !this.selectedGroup) {
+                               return
+                       }
+                       const userid = String(this.selectedUser.id)
+                       const gid = String(this.selectedGroup.id)
+                       try {
+                               logger.debug('Adding user to group', { userid, gid })
+                               // @ts-expect-error: allow untyped $store
+                               await this.$store.dispatch('addUserGroup', { userid, gid })
+                               // @ts-expect-error: allow untyped $store
+                               if (!this.$store.getters.getUsers.find(u => u.id === userid)) {
+                                       // @ts-expect-error: allow untyped $store
+                                       const resp = await this.$store.dispatch('getUser', userid)
+                                       if (resp) {
+                                               // @ts-expect-error: allow untyped $store
+                                               this.$store.commit('addUserData', resp)
+                                       }
+                               }
+                               this.$emit('closing')
+                       } catch (error) {
+                               logger.error(t('settings', 'Failed to add user to group'), { userid, gid, error })
+                       }
+               },
 	},
 })
 </script>

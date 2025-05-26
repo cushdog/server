@@ -210,21 +210,26 @@ class GroupsController extends AUserDataOCSController {
 			$usersDetails = [];
 			foreach ($users as $user) {
 				try {
-					/** @var IUser $user */
-					$userId = (string)$user->getUID();
-					$userData = $this->getUserData($userId);
-					// Do not insert empty entry
-					if ($userData !== null) {
-						$usersDetails[$userId] = $userData;
-					} else {
-						// Logged user does not have permissions to see this user
-						// only showing its id
-						$usersDetails[$userId] = ['id' => $userId];
-					}
+						/** @var IUser $user */
+						$userId = (string)$user->getUID();
+						$userData = $this->getUserData($userId);
+						// Do not insert empty entry
+						if ($userData !== null) {
+								$usersDetails[$userId] = $userData;
+						} else {
+								// Logged user does not have permissions to see this user
+								// show id and displayname
+								$displayName = $user->getDisplayName();
+								$usersDetails[$userId] = [
+										'id' => $userId,
+										'displayname' => $displayName,
+										'display-name' => $displayName,
+								];
+						}
 				} catch (OCSNotFoundException $e) {
-					// continue if a users ceased to exist.
+						// continue if a users ceased to exist.
 				}
-			}
+		}
 			return new DataResponse(['users' => $usersDetails]);
 		}
 
