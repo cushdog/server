@@ -292,9 +292,8 @@ class UsersController extends AUserDataOCSController {
 	 *
 	 * 200: Users details returned based on last logged in information
 	 */
-	#[AuthorizedAdminSetting(settings: Users::class)]
-	public function getLastLoggedInUsers(
-		string $search = '',
+	#[AuthorizedAdminSetting(settings:Users::class)]
+	public function getLastLoggedInUsers(string $search = '',
 		?int $limit = null,
 		int $offset = 0,
 	): DataResponse {
@@ -338,48 +337,6 @@ class UsersController extends AUserDataOCSController {
 			'users' => $usersDetails
 		]);
 	}
-
-	/**
-	 * Search all users by id or display name
-	 *
-	 * Allows subadmins to look up existing users that are not yet part of
-	 * their groups so they can add them.
-	 *
-	 * @param string $search Text to search for
-	 * @param ?int $limit Limit the amount of users returned
-	 * @param int $offset Offset for searching for users
-	 * @return DataResponse<Http::STATUS_OK, array{users: array<string, string>}, array{}>
-	 *
-	 * 200: Users returned
-	 */
-	#[NoAdminRequired]
-	public function searchAllUsers(string $search = '', ?int $limit = null, int $offset = 0): DataResponse {
-		$currentUser = $this->userSession->getUser();
-
-		$uid = $currentUser->getUID();
-		$subAdminManager = $this->groupManager->getSubAdmin();
-		$isAdmin = $this->groupManager->isAdmin($uid);
-		$isDelegatedAdmin = $this->groupManager->isDelegatedAdmin($uid);
-
-		if ($isAdmin || $isDelegatedAdmin || $subAdminManager->isSubAdmin($currentUser)) {
-			$users = $this->userManager->searchDisplayName($search, $limit, $offset);
-			$result = [];
-			foreach ($users as $user) {
-				/** @var IUser $user */
-				$result[$user->getUID()] = $user->getDisplayName();
-			}
-
-			return new DataResponse([
-				'users' => $result,
-			]);
-		}
-
-		throw new OCSForbiddenException();
-	}
-
-
-
-
 
 	/**
 	 * @NoSubAdminRequired
@@ -790,12 +747,10 @@ class UsersController extends AUserDataOCSController {
 		}
 
 		$allowDisplayNameChange = $this->config->getSystemValue('allow_user_to_change_display_name', true);
-		if (
-			$allowDisplayNameChange === true && (
-				$targetUser->getBackend() instanceof ISetDisplayNameBackend
-				|| $targetUser->getBackend()->implementsActions(Backend::SET_DISPLAYNAME)
-			)
-		) {
+		if ($allowDisplayNameChange === true && (
+			$targetUser->getBackend() instanceof ISetDisplayNameBackend
+			|| $targetUser->getBackend()->implementsActions(Backend::SET_DISPLAYNAME)
+		)) {
 			$permittedFields[] = IAccountManager::PROPERTY_DISPLAYNAME;
 		}
 
@@ -953,12 +908,10 @@ class UsersController extends AUserDataOCSController {
 		$permittedFields = [];
 		if ($targetUser->getUID() === $currentLoggedInUser->getUID()) {
 			$allowDisplayNameChange = $this->config->getSystemValue('allow_user_to_change_display_name', true);
-			if (
-				$allowDisplayNameChange !== false && (
-					$targetUser->getBackend() instanceof ISetDisplayNameBackend
-					|| $targetUser->getBackend()->implementsActions(Backend::SET_DISPLAYNAME)
-				)
-			) {
+			if ($allowDisplayNameChange !== false && (
+				$targetUser->getBackend() instanceof ISetDisplayNameBackend
+				|| $targetUser->getBackend()->implementsActions(Backend::SET_DISPLAYNAME)
+			)) {
 				$permittedFields[] = self::USER_FIELD_DISPLAYNAME;
 				$permittedFields[] = IAccountManager::PROPERTY_DISPLAYNAME;
 			}
@@ -1691,7 +1644,7 @@ class UsersController extends AUserDataOCSController {
 	 *
 	 * 200: User added as group subadmin successfully
 	 */
-	#[AuthorizedAdminSetting(settings: Users::class)]
+	#[AuthorizedAdminSetting(settings:Users::class)]
 	#[PasswordConfirmationRequired]
 	public function addSubAdmin(string $userId, string $groupid): DataResponse {
 		$group = $this->groupManager->get($groupid);
@@ -1731,7 +1684,7 @@ class UsersController extends AUserDataOCSController {
 	 *
 	 * 200: User removed as group subadmin successfully
 	 */
-	#[AuthorizedAdminSetting(settings: Users::class)]
+	#[AuthorizedAdminSetting(settings:Users::class)]
 	#[PasswordConfirmationRequired]
 	public function removeSubAdmin(string $userId, string $groupid): DataResponse {
 		$group = $this->groupManager->get($groupid);
@@ -1765,7 +1718,7 @@ class UsersController extends AUserDataOCSController {
 	 *
 	 * 200: User subadmin groups returned
 	 */
-	#[AuthorizedAdminSetting(settings: Users::class)]
+	#[AuthorizedAdminSetting(settings:Users::class)]
 	public function getUserSubAdminGroups(string $userId): DataResponse {
 		$groups = $this->getUserSubAdminGroupsData($userId);
 		return new DataResponse($groups);
