@@ -5,12 +5,15 @@
 
 <template>
 	<Fragment>
-		<NewUserDialog v-if="showConfig.showNewUserForm"
-			:loading="loading"
-			:new-user="newUser"
-			:quota-options="quotaOptions"
-			@reset="resetForm"
-			@closing="closeDialog" />
+               <NewUserDialog v-if="showConfig.showNewUserForm"
+                        :loading="loading"
+                        :new-user="newUser"
+                        :quota-options="quotaOptions"
+                        @reset="resetForm"
+                        @closing="closeDialog" />
+               <AddExistingUserDialog v-if="showConfig.showAddExistingUserForm"
+                        :group="currentGroup"
+                        @closing="closeAddExistingDialog" />
 
 		<NcEmptyContent v-if="filteredUsers.length === 0"
 			class="empty"
@@ -70,6 +73,7 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 
 import VirtualList from './Users/VirtualList.vue'
 import NewUserDialog from './Users/NewUserDialog.vue'
+import AddExistingUserDialog from './Users/AddExistingUserDialog.vue'
 import UserListFooter from './Users/UserListFooter.vue'
 import UserListHeader from './Users/UserListHeader.vue'
 import UserRow from './Users/UserRow.vue'
@@ -99,9 +103,10 @@ export default {
 		Fragment,
 		NcEmptyContent,
 		NcIconSvgWrapper,
-		NcLoadingIcon,
-		NewUserDialog,
-		UserListFooter,
+               NcLoadingIcon,
+               NewUserDialog,
+               AddExistingUserDialog,
+               UserListFooter,
 		UserListHeader,
 		VirtualList,
 	},
@@ -170,10 +175,18 @@ export default {
 			return this.users.filter(user => user.enabled !== false)
 		},
 
-		groups() {
-			return this.$store.getters.getSortedGroups
-				.filter(group => group.id !== '__nc_internal_recent' && group.id !== 'disabled')
-		},
+                groups() {
+                        return this.$store.getters.getSortedGroups
+                                .filter(group => group.id !== '__nc_internal_recent' && group.id !== 'disabled')
+                },
+
+               currentGroup() {
+                       const gid = this.selectedGroup
+                       if (!gid) {
+                               return null
+                       }
+                       return this.groups.find(g => g.id === gid) || null
+               },
 
 		quotaOptions() {
 			// convert the preset array into objects
@@ -308,12 +321,19 @@ export default {
 			this.isInitialLoad = false
 		},
 
-		closeDialog() {
-			this.$store.commit('setShowConfig', {
-				key: 'showNewUserForm',
-				value: false,
-			})
-		},
+               closeDialog() {
+                       this.$store.commit('setShowConfig', {
+                               key: 'showNewUserForm',
+                               value: false,
+                       })
+               },
+
+               closeAddExistingDialog() {
+                       this.$store.commit('setShowConfig', {
+                               key: 'showAddExistingUserForm',
+                               value: false,
+                       })
+               },
 
 		async search({ query }) {
 			this.searchQuery = query

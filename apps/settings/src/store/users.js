@@ -52,9 +52,10 @@ const state = {
 		showUserBackend: localStorage.getItem('account_settings__showUserBackend') === 'true',
 		showFirstLogin: localStorage.getItem('account_settings__showFirstLogin') === 'true',
 		showLastLogin: localStorage.getItem('account_settings__showLastLogin') === 'true',
-		showNewUserForm: localStorage.getItem('account_settings__showNewUserForm') === 'true',
-		showLanguages: localStorage.getItem('account_settings__showLanguages') === 'true',
-	},
+               showNewUserForm: localStorage.getItem('account_settings__showNewUserForm') === 'true',
+               showAddExistingUserForm: localStorage.getItem('account_settings__showAddExistingUserForm') === 'true',
+               showLanguages: localStorage.getItem('account_settings__showLanguages') === 'true',
+       },
 }
 
 const mutations = {
@@ -103,26 +104,40 @@ const mutations = {
 			state.groups.splice(groupIndex, 1)
 		}
 	},
-	addUserGroup(state, { userid, gid }) {
-		const group = state.groups.find(groupSearch => groupSearch.id === gid)
-		const user = state.users.find(user => user.id === userid)
-		// increase count if user is enabled
-		if (group && user.enabled && state.userCount > 0) {
-			group.usercount++
-		}
-		const groups = user.groups
-		groups.push(gid)
-	},
-	removeUserGroup(state, { userid, gid }) {
-		const group = state.groups.find(groupSearch => groupSearch.id === gid)
-		const user = state.users.find(user => user.id === userid)
-		// lower count if user is enabled
-		if (group && user.enabled && state.userCount > 0) {
-			group.usercount--
-		}
-		const groups = user.groups
-		groups.splice(groups.indexOf(gid), 1)
-	},
+       addUserGroup(state, { userid, gid }) {
+               const group = state.groups.find(groupSearch => groupSearch.id === gid)
+               const user = state.users.find(user => user.id === userid)
+               if (!user) {
+                       return
+               }
+               // increase count if user is enabled
+               if (group && user.enabled && state.userCount > 0) {
+                       group.usercount++
+               }
+               if (!Array.isArray(user.groups)) {
+                       user.groups = []
+               }
+               if (!user.groups.includes(gid)) {
+                       user.groups.push(gid)
+               }
+       },
+       removeUserGroup(state, { userid, gid }) {
+               const group = state.groups.find(groupSearch => groupSearch.id === gid)
+               const user = state.users.find(user => user.id === userid)
+               if (!user) {
+                       return
+               }
+               // lower count if user is enabled
+               if (group && user.enabled && state.userCount > 0) {
+                       group.usercount--
+               }
+               if (Array.isArray(user.groups)) {
+                       const index = user.groups.indexOf(gid)
+                       if (index !== -1) {
+                               user.groups.splice(index, 1)
+                       }
+               }
+       },
 	addUserSubAdmin(state, { userid, gid }) {
 		const groups = state.users.find(user => user.id === userid).subadmin
 		groups.push(gid)
@@ -328,15 +343,33 @@ const actions = {
 	 * @param {string} options.search Search amongst users
 	 * @return {Promise}
 	 */
-	searchUsers(context, { offset, limit, search }) {
-		search = typeof search === 'string' ? search : ''
+       searchUsers(context, { offset, limit, search }) {
+               search = typeof search === 'string' ? search : ''
 
-		return api.get(generateOcsUrl('cloud/users/details?offset={offset}&limit={limit}&search={search}', { offset, limit, search })).catch((error) => {
-			if (!axios.isCancel(error)) {
-				context.commit('API_FAILURE', error)
-			}
-		})
-	},
+               const isAdmin = usersSettings.isAdmin || usersSettings.isDelegatedAdmin
+               const endpoint = isAdmin ? 'cloud/users/details' : 'cloud/users/search'
+
+               return api.get(generateOcsUrl(`${endpoint}?offset={offset}&limit={limit}&search={search}`, { offset, limit, search }))
+                       .then((response) => {
+                               if (!isAdmin) {
+                                       const normalized = {}
+                                       const users = response.data.ocs.data.users
+                                       Object.keys(users).forEach((id) => {
+                                               normalized[id] = {
+                                                       id,
+                                                       displayname: users[id],
+                                               }
+                                       })
+                                       response.data.ocs.data.users = normalized
+                               }
+                               return response
+                       })
+                       .catch((error) => {
+                               if (!axios.isCancel(error)) {
+                                       context.commit('API_FAILURE', error)
+                               }
+                       })
+       },
 
 	/**
 	 * Get user details
@@ -597,13 +630,23 @@ const actions = {
 	 * @param {string} options.gid Group id
 	 * @return {Promise}
 	 */
-	addUserGroup(context, { userid, gid }) {
-		return api.requireAdmin().then((response) => {
-			return api.post(generateOcsUrl('cloud/users/{userid}/groups', { userid }), { groupid: gid })
-				.then((response) => context.commit('addUserGroup', { userid, gid }))
-				.catch((error) => { throw error })
-		}).catch((error) => context.commit('API_FAILURE', { userid, error }))
-	},
+       async addUserGroup(context, { userid, gid }) {
+               try {
+                       await api.requireAdmin()
+                       await api.post(generateOcsUrl('cloud/users/{userid}/groups', { userid }), { groupid: gid })
+                       if (context.state.users.find(user => user.id === userid)) {
+                               context.commit('addUserGroup', { userid, gid })
+                       } else {
+                               const resp = await context.dispatch('getUser', userid)
+                               if (resp) {
+                                       context.commit('addUserData', resp)
+                               }
+                       }
+               } catch (error) {
+                       context.commit('API_FAILURE', { userid, error })
+                       throw error
+               }
+       },
 
 	/**
 	 * Remove user from group
@@ -614,18 +657,19 @@ const actions = {
 	 * @param {string} options.gid Group id
 	 * @return {Promise}
 	 */
-	removeUserGroup(context, { userid, gid }) {
-		return api.requireAdmin().then((response) => {
-			return api.delete(generateOcsUrl('cloud/users/{userid}/groups', { userid }), { groupid: gid })
-				.then((response) => context.commit('removeUserGroup', { userid, gid }))
-				.catch((error) => { throw error })
-		}).catch((error) => {
-			context.commit('API_FAILURE', { userid, error })
-			// let's throw one more time to prevent
-			// the view from removing the user row on failure
-			throw error
-		})
-	},
+       async removeUserGroup(context, { userid, gid }) {
+               try {
+                       await api.requireAdmin()
+                       await api.delete(generateOcsUrl('cloud/users/{userid}/groups', { userid }), { groupid: gid })
+                       if (context.state.users.find(user => user.id === userid)) {
+                               context.commit('removeUserGroup', { userid, gid })
+                       }
+               } catch (error) {
+                       context.commit('API_FAILURE', { userid, error })
+                       // let's throw one more time to prevent the view from removing the user row on failure
+                       throw error
+               }
+       },
 
 	/**
 	 * Add user to group admin
