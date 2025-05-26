@@ -75,10 +75,19 @@ export default {
         this.promise.cancel?.()
       }
       try {
-        this.promise = this.$store.dispatch('searchUsers', { offset: 0, limit: 10, search: query })
+        this.promise = this.$store.dispatch('searchUsers', {
+          offset: 0,
+          limit: 10,
+          search: query,
+        })
         const resp = await this.promise
-        const users = resp?.data ? Object.values(resp.data.ocs.data.users) : []
-        this.possibleUsers = users
+        console.log('🔍 AddExistingUserDialog: Search response:', resp?.data?.ocs?.data?.users)
+        
+        // Get the users object and convert to array of user objects
+        const usersMap = resp?.data?.ocs?.data?.users || {}
+        this.possibleUsers = Object.values(usersMap)
+        
+        console.log('🎯 AddExistingUserDialog: Processed users:', this.possibleUsers)
       } catch (error) {
         logger.error(t('settings', 'Failed to search accounts'), { error })
       }
@@ -89,6 +98,7 @@ export default {
         return
       }
       try {
+        console.debug(this.selectedUser)
         await this.$store.dispatch('addUserGroup', { userid: this.selectedUser.id, gid: this.selectedGroup.id })
         if (!this.$store.getters.getUsers.find(u => u.id === this.selectedUser.id)) {
           const resp = await this.$store.dispatch('getUser', this.selectedUser.id)

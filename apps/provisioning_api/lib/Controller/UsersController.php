@@ -121,6 +121,9 @@ class UsersController extends AUserDataOCSController
 		if ($isAdmin || $isDelegatedAdmin) {
 			$users = $this->userManager->search($search, $limit, $offset);
 		} elseif ($subAdminManager->isSubAdmin($user)) {
+
+			print "This is a string";
+
 			$subAdminOfGroups = $subAdminManager->getSubAdminsGroups($user);
 			foreach ($subAdminOfGroups as $key => $group) {
 				$subAdminOfGroups[$key] = $group->getGID();
@@ -130,6 +133,8 @@ class UsersController extends AUserDataOCSController
 			foreach ($subAdminOfGroups as $group) {
 				$users = array_merge($users, $this->groupManager->displayNamesInGroup($group, $search, $limit, $offset));
 			}
+			// print out users array
+
 		}
 
 		/** @var list<string> $users */
@@ -161,10 +166,10 @@ class UsersController extends AUserDataOCSController
 		$subAdminManager = $this->groupManager->getSubAdmin();
 		$isAdmin = $this->groupManager->isAdmin($uid);
 		$isDelegatedAdmin = $this->groupManager->isDelegatedAdmin($uid);
-		if ($isAdmin || $isDelegatedAdmin) {
+		if ($isAdmin || $isDelegatedAdmin || ($subAdminManager->isSubAdmin($currentUser))) {
 			$users = $this->userManager->search($search, $limit, $offset);
 			$users = array_keys($users);
-		} elseif ($subAdminManager->isSubAdmin($currentUser)) {
+	} elseif ($subAdminManager->isSubAdmin($currentUser)) {
 			$subAdminOfGroups = $subAdminManager->getSubAdminsGroups($currentUser);
 			foreach ($subAdminOfGroups as $key => $group) {
 				$subAdminOfGroups[$key] = $group->getGID();

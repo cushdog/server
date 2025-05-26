@@ -347,23 +347,38 @@ const actions = {
                search = typeof search === 'string' ? search : ''
 
                const isAdmin = usersSettings.isAdmin || usersSettings.isDelegatedAdmin
-               const endpoint = isAdmin ? 'cloud/users/details' : 'cloud/users/search'
+               const endpoint = 'cloud/users/details'
 
-               return api.get(generateOcsUrl(`${endpoint}?offset={offset}&limit={limit}&search={search}`, { offset, limit, search }))
-                       .then((response) => {
-                               if (!isAdmin) {
-                                       const normalized = {}
-                                       const users = response.data.ocs.data.users
-                                       Object.keys(users).forEach((id) => {
-                                               normalized[id] = {
-                                                       id,
-                                                       displayname: users[id],
-                                               }
-                                       })
-                                       response.data.ocs.data.users = normalized
+                               return api.get(generateOcsUrl(`${endpoint}?offset={offset}&limit={limit}&search={search}`, { offset, limit, search }))
+			   		   .then((response) => {
+                               console.log('🔍 DEBUGGING: Raw response users:', response.data.ocs.data.users)
+                               
+                               const users = response.data.ocs.data.users
+                               if (users) {
+                                   // Ensure every user object has both id and displayname properties
+                                   Object.keys(users).forEach((userId) => {
+                                       const userData = users[userId]
+                                       console.log(`👤 Processing user ${userId}:`, userData)
+                                       
+                                       if (typeof userData === 'object' && userData !== null) {
+                                           // Make sure the user object has the correct id field
+                                           if (!userData.id) {
+                                               userData.id = userId
+                                               console.log(`✅ Added missing id: ${userId}`)
+                                           }
+                                           
+                                           // Make sure displayname exists and is a string
+                                           if (!userData.displayname || typeof userData.displayname !== 'string') {
+                                               userData.displayname = userData.display || userData.displayName || userId
+                                               console.log(`✅ Fixed displayname for ${userId}: ${userData.displayname}`)
+                                           }
+                                       }
+                                   })
                                }
+                               
+                               console.log('🎯 FINAL users structure:', users)
                                return response
-                       })
+                           })
                        .catch((error) => {
                                if (!axios.isCancel(error)) {
                                        context.commit('API_FAILURE', error)
