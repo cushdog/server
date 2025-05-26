@@ -36,3 +36,20 @@ Feature: provisioning
     And the HTTP status code should be "200"
     And detailed users returned are
       | user-in-group |
+
+  Scenario: Search all users as admin
+    Given As an "admin"
+    And user "search-user1" with displayname "Alice Admin" exists
+    And user "search-user2" with displayname "Bob Builder" exists
+    When sending "GET" to "/cloud/users/search?search=er"
+    Then the OCS status code should be "200"
+    And the HTTP status code should be "200"
+    And user search mapping is
+      | search-user1 | Alice Admin |
+      | search-user2 | Bob Builder |
+
+  Scenario: Regular user cannot search all users
+    Given As an "search-user1"
+    When sending "GET" to "/cloud/users/search?search=any"
+    Then the OCS status code should be "403"
+    And the HTTP status code should be "200"
