@@ -4361,9 +4361,9 @@ class UsersControllerTest extends TestCase {
 	 */
 	public function testGetEditableFields(bool $allowedToChangeDisplayName, bool $allowedToChangeEmail, string $userBackend, array $expected): void {
 		$this->config->method('getSystemValue')->willReturnCallback(fn (string $key, mixed $default) => match ($key) {
-				'allow_user_to_change_display_name' => $allowedToChangeDisplayName,
-				'allow_user_to_change_email' => $allowedToChangeEmail,
-				default => throw new RuntimeException('Unexpected system config key: ' . $key),
+			'allow_user_to_change_display_name' => $allowedToChangeDisplayName,
+			'allow_user_to_change_email' => $allowedToChangeEmail,
+			default => throw new RuntimeException('Unexpected system config key: ' . $key),
 		});
 
 		$user = $this->createMock(IUser::class);
@@ -4384,142 +4384,142 @@ class UsersControllerTest extends TestCase {
 	public function testSearchAllUsersAsAdmin(): void {
 		$loggedInUser = $this->createMock(IUser::class);
 		$loggedInUser->expects($this->once())
-				->method('getUID')
-				->willReturn('admin');
+			->method('getUID')
+			->willReturn('admin');
 		$this->userSession->expects($this->once())
-				->method('getUser')
-				->willReturn($loggedInUser);
+			->method('getUser')
+			->willReturn($loggedInUser);
 
 		$this->groupManager->expects($this->once())
-				->method('isAdmin')
-				->with('admin')
-				->willReturn(true);
+			->method('isAdmin')
+			->with('admin')
+			->willReturn(true);
 		$this->groupManager->expects($this->once())
-				->method('isDelegatedAdmin')
-				->with('admin')
-				->willReturn(false);
+			->method('isDelegatedAdmin')
+			->with('admin')
+			->willReturn(false);
 		$this->groupManager->expects($this->once())
-				->method('getSubAdmin')
-				->willReturn($this->subAdminManager);
+			->method('getSubAdmin')
+			->willReturn($this->subAdminManager);
 		$this->subAdminManager->expects($this->once())
-				->method('isSubAdmin')
-				->with($loggedInUser)
-				->willReturn(false);
+			->method('isSubAdmin')
+			->with($loggedInUser)
+			->willReturn(false);
 
 		$user1 = $this->createUserWithDisplayName('u1', 'User One');
 		$user2 = $this->createUserWithDisplayName('u2', 'User Two');
 		$this->userManager->expects($this->once())
-				->method('searchDisplayName')
-				->with('alice', 2, 0)
-				->willReturn([$user1, $user2]);
+			->method('searchDisplayName')
+			->with('alice', 2, 0)
+			->willReturn([$user1, $user2]);
 
 		$expected = [
-				'users' => [
-						'u1' => 'User One',
-						'u2' => 'User Two',
-				],
+			'users' => [
+				'u1' => 'User One',
+				'u2' => 'User Two',
+			],
 		];
 
 		$this->assertEquals($expected, $this->api->searchAllUsers('alice', 2)->getData());
 	}
 
 	public function testSearchAllUsersAsDelegatedAdmin(): void {
-			$loggedInUser = $this->createMock(IUser::class);
-			$loggedInUser->expects($this->once())
-					->method('getUID')
-					->willReturn('delegate');
-			$this->userSession->expects($this->once())
-					->method('getUser')
-					->willReturn($loggedInUser);
+		$loggedInUser = $this->createMock(IUser::class);
+		$loggedInUser->expects($this->once())
+			->method('getUID')
+			->willReturn('delegate');
+		$this->userSession->expects($this->once())
+			->method('getUser')
+			->willReturn($loggedInUser);
 
-			$this->groupManager->expects($this->once())
-					->method('isAdmin')
-					->with('delegate')
-					->willReturn(false);
-			$this->groupManager->expects($this->once())
-					->method('isDelegatedAdmin')
-					->with('delegate')
-					->willReturn(true);
-			$this->groupManager->expects($this->once())
-					->method('getSubAdmin')
-					->willReturn($this->subAdminManager);
-			$this->subAdminManager->expects($this->once())
-					->method('isSubAdmin')
-					->with($loggedInUser)
-					->willReturn(false);
+		$this->groupManager->expects($this->once())
+			->method('isAdmin')
+			->with('delegate')
+			->willReturn(false);
+		$this->groupManager->expects($this->once())
+			->method('isDelegatedAdmin')
+			->with('delegate')
+			->willReturn(true);
+		$this->groupManager->expects($this->once())
+			->method('getSubAdmin')
+			->willReturn($this->subAdminManager);
+		$this->subAdminManager->expects($this->once())
+			->method('isSubAdmin')
+			->with($loggedInUser)
+			->willReturn(false);
 
-			$user = $this->createUserWithDisplayName('u1', 'User One');
-			$this->userManager->expects($this->once())
-					->method('searchDisplayName')
-					->with('bob', null, 0)
-					->willReturn([$user]);
+		$user = $this->createUserWithDisplayName('u1', 'User One');
+		$this->userManager->expects($this->once())
+			->method('searchDisplayName')
+			->with('bob', null, 0)
+			->willReturn([$user]);
 
-			$expected = [ 'users' => [ 'u1' => 'User One' ] ];
-			$this->assertEquals($expected, $this->api->searchAllUsers('bob')->getData());
+		$expected = [ 'users' => [ 'u1' => 'User One' ] ];
+		$this->assertEquals($expected, $this->api->searchAllUsers('bob')->getData());
 	}
 
 	public function testSearchAllUsersAsSubAdmin(): void {
-			$loggedInUser = $this->createMock(IUser::class);
-			$loggedInUser->expects($this->once())
-					->method('getUID')
-					->willReturn('subadmin');
-			$this->userSession->expects($this->once())
-					->method('getUser')
-					->willReturn($loggedInUser);
+		$loggedInUser = $this->createMock(IUser::class);
+		$loggedInUser->expects($this->once())
+			->method('getUID')
+			->willReturn('subadmin');
+		$this->userSession->expects($this->once())
+			->method('getUser')
+			->willReturn($loggedInUser);
 
-			$this->groupManager->expects($this->once())
-					->method('isAdmin')
-					->with('subadmin')
-					->willReturn(false);
-			$this->groupManager->expects($this->once())
-					->method('isDelegatedAdmin')
-					->with('subadmin')
-					->willReturn(false);
-			$this->groupManager->expects($this->once())
-					->method('getSubAdmin')
-					->willReturn($this->subAdminManager);
-			$this->subAdminManager->expects($this->once())
-					->method('isSubAdmin')
-					->with($loggedInUser)
-					->willReturn(true);
+		$this->groupManager->expects($this->once())
+			->method('isAdmin')
+			->with('subadmin')
+			->willReturn(false);
+		$this->groupManager->expects($this->once())
+			->method('isDelegatedAdmin')
+			->with('subadmin')
+			->willReturn(false);
+		$this->groupManager->expects($this->once())
+			->method('getSubAdmin')
+			->willReturn($this->subAdminManager);
+		$this->subAdminManager->expects($this->once())
+			->method('isSubAdmin')
+			->with($loggedInUser)
+			->willReturn(true);
 
-			$user = $this->createUserWithDisplayName('u1', 'User One');
-			$this->userManager->expects($this->once())
-					->method('searchDisplayName')
-					->with('carol', null, 0)
-					->willReturn([$user]);
+		$user = $this->createUserWithDisplayName('u1', 'User One');
+		$this->userManager->expects($this->once())
+			->method('searchDisplayName')
+			->with('carol', null, 0)
+			->willReturn([$user]);
 
-			$expected = [ 'users' => [ 'u1' => 'User One' ] ];
-			$this->assertEquals($expected, $this->api->searchAllUsers('carol')->getData());
+		$expected = [ 'users' => [ 'u1' => 'User One' ] ];
+		$this->assertEquals($expected, $this->api->searchAllUsers('carol')->getData());
 	}
 
 	public function testSearchAllUsersForbiddenForRegularUser(): void {
-			$loggedInUser = $this->createMock(IUser::class);
-			$loggedInUser->expects($this->once())
-					->method('getUID')
-					->willReturn('user');
-			$this->userSession->expects($this->once())
-					->method('getUser')
-					->willReturn($loggedInUser);
+		$loggedInUser = $this->createMock(IUser::class);
+		$loggedInUser->expects($this->once())
+			->method('getUID')
+			->willReturn('user');
+		$this->userSession->expects($this->once())
+			->method('getUser')
+			->willReturn($loggedInUser);
 
-			$this->groupManager->expects($this->once())
-					->method('isAdmin')
-					->with('user')
-					->willReturn(false);
-			$this->groupManager->expects($this->once())
-					->method('isDelegatedAdmin')
-					->with('user')
-					->willReturn(false);
-			$this->groupManager->expects($this->once())
-					->method('getSubAdmin')
-					->willReturn($this->subAdminManager);
-			$this->subAdminManager->expects($this->once())
-					->method('isSubAdmin')
-					->with($loggedInUser)
-					->willReturn(false);
+		$this->groupManager->expects($this->once())
+			->method('isAdmin')
+			->with('user')
+			->willReturn(false);
+		$this->groupManager->expects($this->once())
+			->method('isDelegatedAdmin')
+			->with('user')
+			->willReturn(false);
+		$this->groupManager->expects($this->once())
+			->method('getSubAdmin')
+			->willReturn($this->subAdminManager);
+		$this->subAdminManager->expects($this->once())
+			->method('isSubAdmin')
+			->with($loggedInUser)
+			->willReturn(false);
 
-			$this->expectException(OCSForbiddenException::class);
-			$this->api->searchAllUsers('forbidden');
+		$this->expectException(OCSForbiddenException::class);
+		$this->api->searchAllUsers('forbidden');
 	}
 
 	private function mockAccount($targetUser, $accountProperties) {

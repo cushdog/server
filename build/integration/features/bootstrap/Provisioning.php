@@ -1,4 +1,5 @@
 <?php
+
 /**
  * SPDX-FileCopyrightText: 2016-2024 Nextcloud GmbH and Nextcloud contributors
  * SPDX-FileCopyrightText: 2016 ownCloud, Inc.
@@ -674,23 +675,23 @@ trait Provisioning {
 	 */
 	public function thePhoneUsersShouldBe($usersList) {
 		if ($usersList instanceof TableNode) {
-				$users = $usersList->getRowsHash();
-				$listCheckedElements = simplexml_load_string($this->response->getBody())->data;
-				$respondedArray = json_decode(json_encode($listCheckedElements), true);
-				Assert::assertEquals($users, $respondedArray);
+			$users = $usersList->getRowsHash();
+			$listCheckedElements = simplexml_load_string($this->response->getBody())->data;
+			$respondedArray = json_decode(json_encode($listCheckedElements), true);
+			Assert::assertEquals($users, $respondedArray);
 		}
-}
+	}
 
 	/**
-	* @Then /^user search mapping is$/
-	* @param TableNode|null $mapping
-	*/
+	 * @Then /^user search mapping is$/
+	 * @param TableNode|null $mapping
+	 */
 	public function userSearchMappingIs($mapping) {
 		if ($mapping instanceof TableNode) {
-				$expected = $mapping->getRowsHash();
-				$list = simplexml_load_string($this->response->getBody())->data->users;
-				$actual = json_decode(json_encode($list), true);
-				Assert::assertEquals($expected, $actual);
+			$expected = $mapping->getRowsHash();
+			$list = simplexml_load_string($this->response->getBody())->data->users;
+			$actual = json_decode(json_encode($list), true);
+			Assert::assertEquals($expected, $actual);
 		}
 	}
 
